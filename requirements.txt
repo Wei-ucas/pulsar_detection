@@ -1,0 +1,6 @@
+pytorch >= 1.1.0
+torchvision
+opencv-python
+pillow
+numpy
+sigpyproc
