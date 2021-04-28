@@ -11,8 +11,8 @@ train_configs = {
 data_set = {
     'type': 'train',
     'file_type': 'img',
-    'file_path': '/ssd/wangw/Ai_pulsar_search/detection/fake_image_sets/fake_pulsar_v8_2000_png',
-    'ann_path' : '/ssd/wangw/Ai_pulsar_search/detection/annotations/fake_pulsar_v8_2000_ann.json',
+    'file_path': '/ssd/wangw/Ai_pulsar_search/detection/fake_image_sets/fake_pulsar_5000_png',
+    'ann_path' : '/ssd/wangw/Ai_pulsar_search/detection/annotations/fake_pulsar_5000_ann.json',
     'batch_size': 6,
     # 'norm_param': (250,137),
     'num_works':4,
