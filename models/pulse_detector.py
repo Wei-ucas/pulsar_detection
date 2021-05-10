@@ -25,7 +25,7 @@ class PulseDectector(nn.Module):
         self.det_head.init_weights()
         self.neck.init_weights()
 
-    def forward(self, img, targets=None, img_info=None):
+    def forward(self, img, targets=None, img_info=None, gt_points=None):
         '''
 
         :param img: tensor batchsize * 3 * H * W
@@ -39,9 +39,8 @@ class PulseDectector(nn.Module):
         # x list l[batchsize * C * H * W]
         if self.training:
             assert targets is not None
-            losses = self.det_head(x, targets, img_info)
+            losses = self.det_head(x, targets, img_info,gt_points=gt_points)
             return losses
-        centerpoints, bbox_cls, bbox_reg = self.det_head(
-            x)  # centerpoints: list l[W]  bbox_cls: list l[batchsize * 1 * 1 * W] bbox_reg: list l[batchsize * 2 * 1 * W]
+        centerpoints, bbox_cls, bbox_reg = self.det_head(x)  # centerpoints: list l[W]  bbox_cls: list l[batchsize * 1 * 1 * W] bbox_reg: list l[batchsize * 2 * 1 * W]
         predict_pulsars = self.postprocess(centerpoints, bbox_cls, bbox_reg, img_info)
         return predict_pulsars

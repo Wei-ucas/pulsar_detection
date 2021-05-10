@@ -6,8 +6,8 @@ import os
 from datasets.transform import Transformer
 from utils import data2pic
 
-GAMMA = 2.0
-
+dt = 0.006291456
+df = -1.953125
 
 class FilSet(Dataset):
     def __init__(self, fil_path, f_downsamp=16, t_downsamp=32):
@@ -52,16 +52,19 @@ class FilSet(Dataset):
         return fil, fil_info
 
     # normalize data to image
-    def fil2pic(self, fil, start_samp, nsamp, downsamp=True):
-        data = fil.readBlock(start_samp, nsamp)
-        dst = data2pic(data, self.f_downsamp, self.t_downsamp, downsamp)
+    def fil2pic(self, fil, fil_info, downsamp=True):
+        nsamp = fil_info['nsamp']
+        t_downsamp = int(round(dt/fil_info['tsamp']))
+        f_downsamp = int(round(df/fil_info['df']))
+        data = fil.readBlock(0, nsamp)
+        dst = data2pic(data, f_downsamp, t_downsamp, downsamp)
         return dst
 
     def __getitem__(self, item):
         fil_path = self.fil_lists[item]
         fil, fil_info = self.load_fil(fil_path)
-        pic = self.fil2pic(fil,0,fil_info['nsamp'])
-        pic = self.transform.img_trans(pic,train=False)
+        pic = self.fil2pic(fil,fil_info)
+        pic = self.transform.img_trans(pic,augment=False)
         return pic, fil_info
 
 

@@ -1,9 +1,9 @@
 
 train_configs = {
         "epoch":10,
-        "learning_rate":0.001,
+        "learning_rate":0.004,
         'lr_step':4,
-        "save_step":5,
+        "save_step":2,
         "verbose":10
     }
 
@@ -11,9 +11,9 @@ train_configs = {
 data_set = {
     'type': 'train',
     'file_type': 'img',
-    'file_path': '/ssd/wangw/Ai_pulsar_search/detection/fake_image_sets/fake_pulsar_5000_png',
-    'ann_path' : '/ssd/wangw/Ai_pulsar_search/detection/annotations/fake_pulsar_5000_ann.json',
-    'batch_size': 6,
+    'file_path': './fake_images/fake_pulsar_train',
+    'ann_path' : './annotations/fake_pulsar_train_ann.json',
+    'batch_size': 4,
     # 'norm_param': (250,137),
     'num_works':4,
     'pin_memory':True,
@@ -53,7 +53,7 @@ det_head = {
     'center_sampling_radius':0
 }
 postprocess = {
-    'score': 0.7,
+    'score': 0.5,
     'iou': 0.1,
     'max_num_per_img': 100
 }

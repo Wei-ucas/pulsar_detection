@@ -1,10 +1,10 @@
 import torch
 from torch.nn import DataParallel
-from datasets import TrainLoader
+from datasets.train_loader import TrainLoader
 from models import PulseDectector
 from torch import optim
 import argparse
-from utils import create_logger, config_from_py
+from utils import create_logger, config_from_py, create_folder
 import os
 
 
@@ -23,10 +23,11 @@ def train(model, data, train_configs, save_path, model_name, logger, device=torc
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
         for it in range(iter_per_epoch):
-            imgs, anns = next(data_iter)
+            imgs, anns, gt_points = next(data_iter)
             imgs = imgs.to(device)
-            anns = [ann.cuda() for ann in anns]
-            loss= model(imgs, anns)
+            anns = [ann.to(device) for ann in anns]
+            gt_points = [gt_point.to(device) for gt_point in gt_points]
+            loss = model(imgs, anns, gt_points=gt_points)
             loss_cls = loss['loss_cls'].mean()
             loss_reg = loss['loss_reg'] * 0.1
             loss_sum = loss_cls + loss_reg
@@ -49,7 +50,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train a pulse detector")
     parser.add_argument('config', help='config file')
     parser.add_argument('--name', help='model name', default='resnet-fcos')
-    parser.add_argument('--gpu', action='store_true', default=torch.cuda.is_available())
+    parser.add_argument('--gpu', action='store_true',help='whether to use gpu', default=torch.cuda.is_available())
     parser.add_argument('--output', help='output path to save model', default='./cpks')
     args = parser.parse_args()
     return args
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     args = parse_args()
 
     if not os.path.exists(args.output):
-        os.mkdir(args.output)
+        create_folder(args.output)
     # create a log file to save output information
     logger = create_logger("Train", args.output)
     logger.info('Train model：{}'.format(args.name))
@@ -77,9 +78,9 @@ if __name__ == '__main__':
 
     logger.info('Create model...')
     model = PulseDectector(cfg)
-    model.to(device)
-    if num_gpus > 1:
-        model = DataParallel(model)
+    model = model.to(device)
+    # if num_gpus > 1:
+    #     model = DataParallel(model)
     data = TrainLoader(cfg.data_set)
 
-    train(model,data, cfg.train_configs, args.output, args.name, logger, device)
+    train(model, data, cfg.train_configs, args.output, args.name, logger, device)

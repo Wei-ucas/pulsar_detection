@@ -7,12 +7,16 @@ from sigpyproc.Readers import FilReader
 import os
 import cv2
 import json
-from utils import data2pic
+from utils import data2pic,create_folder
 import random
 import collections
 import glob
 import tqdm
 import multiprocessing
+
+
+# def run(i):
+#     pass
 
 
 # nsamp = 262144.0
@@ -36,12 +40,12 @@ class PulseCreator:
 
     def __init__(self, fil):
 
-        # self.fil = fil
+        self.fil = fil
         self.D = 4148.808
         self.tsamp = fil.header['tsamp']
         self.df = fil.header['foff']
-        self.nsamp = fil.header['nsamples']
-        # self.nsamp = 4000*32
+        # self.nsamp = fil.header['nsamples']
+        self.nsamp = 4000*32 # 限制训练图片的大小，没必要太大
         self.nbits = fil.header['nbits']
         self.fch1 = fil.header['fch1']
         self.fmax = fil.header['ftop']
@@ -68,18 +72,21 @@ class PulseCreator:
         bit_time_array = time_array / self.tsamp
         bit_width = int(round(width / 1000 / self.tsamp))
         bit_delays = self.chans_df * dm
+        # bit_chan_time = np.round(bit_delays + bit_time - bit_width / 2).astype('int')
+        # bit_chan_time = np.round(bit_delays + bit_time).astype('int')
         start_chan = (start_freq - self.fmax) / self.df
         end_chan = (end_freq - self.fmax) / self.df
+        # bit_period = int(round(period / self.tsamp))
+
         fake_data = self.data.copy()
         for i in range(self.nchans): # 在每个频率通道上依次添加信号
             chan_delay = bit_delays[i]
             for j in range(len(time_array)):
-                # 只在一部分通道上显示信号，模拟真实数据中的不完整效果 TODO: 模拟真实数据中信号断断续续的效果
                 if not (start_chan[j] < i < end_chan[j]):
                     continue
                 bit_time = int(bit_time_array[j] + chan_delay) #每个通道上的信号延迟
                 pulse = []
-                pulse_pos = np.round(# 假定信号服从正态分布
+                pulse_pos = np.round(# 简单假定信号服从正态分布
                     np.random.normal(bit_time, bit_width / 2, int(round(signal_rate * bit_width)))).astype('int')
                 for pos in pulse_pos:
                     if 0 <= pos < self.nsamp:
@@ -97,9 +104,11 @@ class PulseCreator:
             "filename": os.path.join(fil_path, 'fake_{:.1f}_{:.2f}_{:.2f}_{:.1f}_{:.2f}_{}.fil') \
                 .format(dm, time_array[0], width, signal_rate, period, self.fake_count)
         }
-        # fil文件比较大，只生成训练图片可以不保存
+
+        # 保存生成的虚拟pulsar的filbank 文件，如果是用来训练模型，可以不保存此文件，直接绘制成png图片， 如果是生成数据用来inference的流程，则需要保存filbank文件
         # fake_outfile = self.fil.header.prepOutfile(update['filename'], update)
         # fake_outfile.cwrite(fake_data.transpose().reshape(-1))
+
         self.fake_count += 1
         return fake_data, update['source_name']
 
@@ -108,13 +117,12 @@ class PulseCreator:
         width = random.uniform(3, 50)
         # width = 10
         signal_rate = random.uniform(0.1, 1.5)
-        # width signal 两个参数决定了信号强度和宽度
         period = random.uniform(1.5, self.timelen / 5)
-        dm = random.uniform(20, 1500)
+        dm = random.uniform(20, 1000)
         time_array = []
         start_freq = []
         end_freq = []
-        while time < self.timelen - 1000 * self.tsamp: # 防止信号落在太靠边缘的位置
+        while time < self.timelen - 1000 * self.tsamp:
             time_array.append(time)
             time += period
             s_f = random.uniform(self.fmin + 100, self.fmax)
@@ -162,40 +170,41 @@ def run(creator, fil_path, png_path, fake_anns):
             name: creator.get_fake_ann(pulse_para, creator.tds, creator.nsamp)
         }
     )
+    # 将生成的fake pulsar数据绘制成图片，训练时直接读取这些图片
     filplot(fake_data, name, creator.tds, png_path)
     # pass
 
 
 def main():
-    # 在没有信号的数据上添加虚假的随机脉冲信号，用来训练模型
-    # rootpath = '/ssd/wangw/Ai_pulsar_search/detection/nopulse_fils/'
-    out_name = 'fake_pulsar'
-    png_path = os.path.join('/ssd/wangw/Ai_pulsar_search/detection/fake_image_sets', out_name + '_png')
+    out_name = 'fake_pulsar_train'
+    png_path = os.path.join('./fake_images', out_name)
     if not os.path.exists(png_path):
-        os.mkdir(png_path)
-    fil_path = os.path.join('/ssd/wangw/Ai_pulsar_search/detection/fake_fils', out_name)
+        create_folder(png_path)
+    fil_path = os.path.join('./fake_fils', out_name)
     if not os.path.exists(fil_path):
-        os.mkdir(fil_path)
-    nopulse_files = glob.glob('/ssd/wangw/Ai_pulsar_search/detection/nopulse_fils/*.fil')
-    # fil = FilReader('/ssd/wangw/Ai_pulsar_search/detection/nopulse_fils/Dec+3557_arcdrift+23.4-M01_0037_1k.fil')
-    # fake_anns = collections.OrderedDict()
+        create_folder(fil_path)
+    ann_path = './annotations'
+    if not os.path.exists(ann_path):
+        create_folder(ann_path)
+    nopulse_files = glob.glob('./nopulse_fils/*.fil')
     fake_anns = multiprocessing.Manager().dict()
     count = 0
-    pool = multiprocessing.Pool(24)
+    pool = multiprocessing.Pool(12) # option: 使用多线程加速
     for f in tqdm.tqdm(nopulse_files):
         fil = FilReader(f)
 
         creator = PulseCreator(fil)
-        for i in range(20):
+        for i in range(10): #每个背景数据生成10个不同参数的fake pulsar文件
             pool.apply_async(run, args=(creator, fil_path, png_path, fake_anns))
             # run(creator, fil_path, png_path, fake_anns)
-        count += 1
+        # count += 1
         # if count == 10:
         #     break
     pool.close()
     pool.join()
+    # 保存标注文件
     fake_anns = dict(fake_anns)
-    with open('annotations/{}_ann.json'.format(out_name), 'w') as jf:
+    with open('./annotations/{}_ann.json'.format(out_name), 'w') as jf:
         json.dump(fake_anns, jf, indent=4)
 
 

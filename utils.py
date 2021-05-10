@@ -93,5 +93,12 @@ def data2pic(data, f_downsamp, t_downsamp, downsamp=True):
     return dst
 
 
+def create_folder(path):
+    root_path = os.path.split(path)[0]
+    if not os.path.exists(root_path):
+        create_folder(root_path)
+    os.mkdir(path)
+
+
 if __name__ == '__main__':
     config_from_py('configs/default.py')

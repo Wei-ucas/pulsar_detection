@@ -9,11 +9,11 @@ import torch
 
 def pulse_collate(batch):
     batch = filter(lambda x: x is not None, batch)
-    images, anns = zip(*batch)
+    images, anns, gt_points = zip(*batch)
 
     images = torch.stack(images, dim=0)
 
-    return images, anns
+    return images, anns, gt_points
 
 
 class TrainSet(Dataset):
@@ -36,11 +36,9 @@ class TrainSet(Dataset):
         for a in ann_dict:
             ann.append([a["time"],a["DM"], a['start_freq'], a['end_freq'], isfake])
         ann = np.array(ann, dtype=np.float)
-        filimg = self.transformer.img_trans(filimg)
-        if self.augment:
-            filimg = self.transformer.gamma_augment(filimg)
-        ann = self.transformer.ann_trans(ann)
-        return filimg, ann
+        filimg = self.transformer.img_trans(filimg,self.augment)
+        ann, gt_points = self.transformer.ann_trans(ann, num_samps=32)
+        return filimg, ann, gt_points
 
     def __len__(self):
         return len(self.fils)

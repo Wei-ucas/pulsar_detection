@@ -81,7 +81,7 @@ class PulseHead(nn.Module):
 
         self.scales = nn.ModuleList([Scale(init_value=1.0) for _ in range(5)])
 
-    def forward(self, x, targets=None, img_info=None):
+    def forward(self, x, targets=None, img_info=None,gt_points=None):
         logits = []
         bbox_reg = []
 
@@ -102,7 +102,7 @@ class PulseHead(nn.Module):
                 bbox_reg.append(torch.exp(bbox_pred))
         locations=self.compute_locations(x) # l[w]
         if self.training:
-            loss_box_cls, loss_box_reg = self.loss_func(locations, logits, bbox_reg, targets)
+            loss_box_cls, loss_box_reg = self.loss_func(locations, logits, bbox_reg, targets, gt_points=gt_points)
             losses = {
                 'loss_cls': loss_box_cls,
                 'loss_reg': loss_box_reg
