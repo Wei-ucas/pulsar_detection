@@ -2,9 +2,9 @@
 train_configs = {
         "epoch":10,
         "learning_rate":0.004,
-        'lr_step':4,
-        "save_step":2,
-        "verbose":10
+        'lr_step':4, #间隔多少个epoch降低一次learning rate
+        "save_step":2, # 间隔多少个epoch保存一次
+        "verbose":10 #打印训练日志的间隔
     }
 
 

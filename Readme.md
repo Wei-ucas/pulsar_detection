@@ -50,3 +50,4 @@ to get the folder "./nopulse_fils". Run
     python train.py configs/default.py
     ```
    Training parameters (such as training set, batch size, learning rate) has been set in "configs/default.py".
+   The checkpoints will be saved in "./cpks"
