@@ -38,13 +38,13 @@ An example filterbank data can be [download](https://drive.google.com/file/d/1Nw
 
 
 ### Train
-1. Create fake pulsar data as train dataset: Download the [real data](https://drive.google.com/file/d/1h7zbuIxdGN7-rlxVA6cW5oQ6zK2GC4yy/view?usp=sharing) that has been confirmed there is no pulsar in them, decompress it to 
+1. Create fake pulsar data as train dataset: Download the [real data](https://drive.google.com/file/d/1h7zbuIxdGN7-rlxVA6cW5oQ6zK2GC4yy/view?usp=sharing) that has been confirmed there is no pulsar in them (100 fils), decompress it to 
 to get the folder "./nopulse_fils". Run
     ```bash
     python fake_from_real.py
     ```
     Three folders will be created, "fake_fils", "fake_images" and "annotations" to save filterbank data, images and annotations info. The last two 
-    will be used for training.
+    will be used for training. 2000 images will be created.
 2. Training, Run
     ```bash
     python train.py configs/default.py

@@ -194,7 +194,7 @@ def main():
         fil = FilReader(f)
 
         creator = PulseCreator(fil)
-        for i in range(10): #每个背景数据生成10个不同参数的fake pulsar文件
+        for i in range(20): #每个背景数据生成20个不同参数的fake pulsar文件
             pool.apply_async(run, args=(creator, fil_path, png_path, fake_anns))
             # run(creator, fil_path, png_path, fake_anns)
         # count += 1
